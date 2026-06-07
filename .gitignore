@@ -1,0 +1,26 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Vector store / data
+src/data/vector_store/
+*.faiss
+*.pkl
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
