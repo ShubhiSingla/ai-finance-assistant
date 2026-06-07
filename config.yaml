@@ -1,0 +1,29 @@
+app:
+  name: "AI Finance Assistant"
+  version: "0.1.0"
+  debug: false
+
+llm:
+  provider: "openai"          # options: openai, anthropic, bedrock
+  model: "gpt-4o-mini"
+  temperature: 0.2
+  max_tokens: 2048
+
+embeddings:
+  provider: "openai"
+  model: "text-embedding-3-small"
+
+rag:
+  chunk_size: 512
+  chunk_overlap: 64
+  top_k: 5
+  vector_store: "faiss"       # options: faiss, chroma, pinecone
+  vector_store_path: "src/data/processed_docs/vector_store"
+  raw_docs_path: "src/data/raw_docs"
+
+market_data:
+  provider: "yfinance"        # options: yfinance, alpha_vantage
+
+news:
+  provider: "newsapi"
+  max_articles: 5
