@@ -1,18 +1,16 @@
-# Vector Store - manages storage and retrieval of document embeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
 
 
-def build_vector_store(chunks: list, embedding_model):
-    """Create and persist a vector store from document chunks.
+def create_vector_store(splits):
 
-    TODO: support FAISS, Chroma, or Pinecone backends
-    """
-    # TODO: from langchain_community.vectorstores import FAISS
-    raise NotImplementedError
+    embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-large"
+    )
 
+    vector_store = FAISS.from_documents(
+        documents=splits,
+        embedding=embeddings
+    )
 
-def load_vector_store(path: str, embedding_model):
-    """Load an existing vector store from disk.
-
-    TODO: implement persistent store loading
-    """
-    raise NotImplementedError
+    return vector_store

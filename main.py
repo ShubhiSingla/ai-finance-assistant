@@ -1,18 +1,33 @@
-# main.py - CLI entry point to run the AI Finance Assistant workflow
-from src.utils.logger import get_logger
+from dotenv import load_dotenv
 
-logger = get_logger(__name__)
+load_dotenv()
+
+from src.rag.ingest import load_documents
+from src.rag.chunking import split_documents
+from src.rag.vector_store import create_vector_store
+from src.agents.finance_qa_agent import finance_qa_agent
 
 
 def main():
-    """Run the finance assistant with a sample query."""
-    # TODO: build graph and invoke
-    # from src.workflow.graph import build_graph
-    # graph = build_graph()
-    # result = graph.invoke({"query": "What is dollar-cost averaging?"})
-    # print(result["response"])
-    logger.info("AI Finance Assistant starting up...")
-    print("🚧 Workflow not yet wired. Implement graph.py to get started.")
+
+    docs = load_documents()
+
+    splits = split_documents(docs)
+
+    vector_store = create_vector_store(splits)
+
+    query = "What is diversification?"
+
+    response = finance_qa_agent(
+        query,
+        vector_store
+    )
+
+    print("\nQuestion:")
+    print(query)
+
+    print("\nAnswer:")
+    print(response)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,18 @@
-# Prompt Builder - constructs LLM prompts from retrieved context and user query
-from langchain_core.prompts import ChatPromptTemplate
+def build_prompt(query: str, context: str):
 
+    prompt = f"""
+    You are an AI Finance Assistant.
 
-def build_rag_prompt(context: str, query: str) -> ChatPromptTemplate:
-    """Build a RAG prompt template combining retrieved context and user query.
+    Answer the user's question using ONLY the provided context.
 
-    TODO: customize system message and prompt template per agent type
+    If the answer is not present in the context,
+    say that you do not have enough information.
+
+    Context:
+    {context}
+
+    User Question:
+    {query}
     """
-    # TODO: define system prompt with finance-specific instructions
-    raise NotImplementedError
+
+    return prompt

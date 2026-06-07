@@ -1,15 +1,27 @@
-# Finance Q&A Agent - answers general finance questions using RAG + LLM
-from langchain_core.messages import BaseMessage
+from langchain_openai import ChatOpenAI
+
+from src.rag.retriever import retrieve_context
+from src.rag.prompt_builder import build_prompt
 
 
-class FinanceQAAgent:
-    """Handles general financial Q&A using RAG-augmented generation."""
+llm = ChatOpenAI(
+    model="gpt-4.1-mini",
+    temperature=0
+)
 
-    def __init__(self, retriever, llm):
-        # TODO: initialize retriever and LLM
-        self.retriever = retriever
-        self.llm = llm
 
-    def run(self, query: str) -> str:
-        # TODO: retrieve context, build prompt, invoke LLM
-        raise NotImplementedError
+def finance_qa_agent(query: str, vector_store):
+
+    context, retrieved_docs = retrieve_context(
+        query,
+        vector_store
+    )
+
+    prompt = build_prompt(
+        query,
+        context
+    )
+
+    response = llm.invoke(prompt)
+
+    return response.content

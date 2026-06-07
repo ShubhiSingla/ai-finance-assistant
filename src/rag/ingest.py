@@ -1,12 +1,26 @@
-# Ingest - loads raw documents from disk or external sources into the pipeline
-from pathlib import Path
+
+from langchain_community.document_loaders import WebBaseLoader
 
 
-def load_documents(source_dir: str) -> list:
-    """Load raw documents from a directory.
+def load_documents():
 
-    Supports PDF, TXT, and Markdown files.
-    TODO: implement loaders using LangChain document loaders
-    """
-    # TODO: use langchain_community.document_loaders (PyPDFLoader, TextLoader, etc.)
-    raise NotImplementedError
+    urls = [
+        "https://www.investopedia.com/terms/d/diversification.asp",
+        "https://www.investopedia.com/terms/s/systematicinvestmentplan.asp",
+        "https://www.investopedia.com/terms/m/mutualfund.asp",
+        "https://www.investopedia.com/terms/e/etf.asp",
+        "https://www.investopedia.com/terms/r/riskreturntradeoff.asp",
+        "https://www.investopedia.com/terms/a/assetallocation.asp",
+        "https://www.investopedia.com/terms/i/inflation.asp",
+        "https://www.investopedia.com/terms/e/emergency_fund.asp",
+        "https://www.investopedia.com/terms/b/bond.asp",
+        "https://www.investopedia.com/terms/s/stock.asp",
+        "https://www.investopedia.com/terms/c/compoundinterest.asp"
+    ]
+    
+
+    loader = WebBaseLoader(web_paths=urls)
+
+    docs = loader.load()
+
+    return docs

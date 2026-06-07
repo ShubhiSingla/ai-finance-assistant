@@ -1,10 +1,14 @@
-# Chunking - splits documents into smaller chunks for embedding and retrieval
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
-def chunk_documents(documents: list, chunk_size: int = 512, chunk_overlap: int = 64) -> list:
-    """Split documents into overlapping chunks.
+def split_documents(docs):
 
-    TODO: implement using LangChain RecursiveCharacterTextSplitter
-    """
-    # TODO: from langchain.text_splitter import RecursiveCharacterTextSplitter
-    raise NotImplementedError
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        add_start_index=True,
+    )
+
+    splits = text_splitter.split_documents(docs)
+
+    return splits
