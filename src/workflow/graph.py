@@ -1,18 +1,58 @@
-# Graph - defines the LangGraph StateGraph connecting all agent nodes
-from langgraph.graph import StateGraph, END
-from src.workflow.state import AssistantState
+from langgraph.graph import StateGraph
+from langgraph.graph import START, END
+
+from src.workflow.state import FinanceAgentState
+from src.workflow.nodes import (
+    finance_qa_node,
+    market_agent_node,
+    router_node
+    )
 
 
-def build_graph() -> StateGraph:
-    """Build and compile the LangGraph workflow.
+def build_graph():
 
-    Nodes: router → [finance_qa | portfolio | market | goal_planner | news | tax | compliance]
-    TODO: add nodes, edges, and conditional routing logic
-    """
-    graph = StateGraph(AssistantState)
+    graph_builder = StateGraph(FinanceAgentState)
 
-    # TODO: graph.add_node(...)
-    # TODO: graph.add_conditional_edges(...)
-    # TODO: graph.set_entry_point("router")
+    graph_builder.add_node(
+    "router",
+    router_node
+    )
 
-    return graph.compile()
+    # Add node
+    graph_builder.add_node(
+        "finance_qa",
+        finance_qa_node
+    )
+
+    graph_builder.add_node(
+        "market_agent",
+        market_agent_node
+    )
+
+    graph_builder.add_edge(
+    START,
+    "router"
+    )
+
+    graph_builder.add_conditional_edges(
+        "router",
+        lambda state: state["route"],
+        {
+            "finance_qa": "finance_qa",
+            "market_agent": "market_agent"
+        }
+    )
+
+    graph_builder.add_edge(
+        "finance_qa",
+        END
+    )
+
+    graph_builder.add_edge(
+        "market_agent",
+        END
+    )
+
+    graph = graph_builder.compile()
+
+    return graph
