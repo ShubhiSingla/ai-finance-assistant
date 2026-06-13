@@ -1,153 +1,364 @@
 # 💰 AI Finance Assistant
 
-A production-ready, modular AI finance assistant powered by **LangGraph**, **LangChain**, **RAG**, and **Streamlit**.
+A modular multi-agent finance assistant powered by **LangGraph**, **LangChain**, **OpenAI**, **RAG**, **FAISS**, and **Streamlit**.
 
-## Architecture
-
-```text
-User Query → Streamlit UI → LangGraph Workflow
-                                ↓
-                            Router (intent classification)
-                                ↓
-            ┌───────────────────┼───────────────────┐
-         Finance QA         Portfolio            Market
-         Tax / Compliance   Goal Planner         News
-                                ↓
-                        RAG Pipeline (retriever → LLM)
-                                ↓
-                           Response → UI
-```
-
-## Project Structure
-
-| Path            | Purpose                                                     |
-| --------------- | ----------------------------------------------------------- |
-| `src/agents/`   | One agent class per financial domain                        |
-| `src/rag/`      | Document ingestion → chunking → embedding → retrieval       |
-| `src/workflow/` | LangGraph state, graph, router, and node wrappers           |
-| `src/tools/`    | LangChain `@tool` functions (market data, calculator, news) |
-| `src/web_app/`  | Streamlit multi-page application                            |
-| `src/utils/`    | Logger, config loader, constants, helpers                   |
-| `src/data/`     | Raw docs, processed vector store, sample portfolios         |
-| `tests/`        | Pytest test suites mirroring `src/` structure               |
+The system combines Retrieval-Augmented Generation (RAG), live market data tools, and multi-agent orchestration to answer financial questions, retrieve market information, and provide grounded financial guidance.
 
 ---
 
-# ✅ Completed Features
+# Architecture
+
+```text
+                    User Query
+                         │
+                         ▼
+                  Streamlit UI
+                         │
+                         ▼
+                 LangGraph Workflow
+                         │
+                         ▼
+                     Router
+                         │
+        ┌────────────────┴────────────────┐
+        │                                 │
+        ▼                                 ▼
+ Finance QA Agent                 Market Agent
+        │                                 │
+        ▼                                 ▼
+    RAG Pipeline                  Yahoo Finance Tool
+        │                                 │
+        ▼                                 ▼
+ OpenAI + Retrieved Docs        Live Market Data
+        │                                 │
+        └──────────────┬──────────────────┘
+                       ▼
+                  Final Response
+                       │
+                       ▼
+                  Streamlit UI
+```
+
+---
+
+# Project Structure
+
+| Path            | Purpose                                                   |
+| --------------- | --------------------------------------------------------- |
+| `src/agents/`   | AI agents (Finance QA Agent, Market Agent, future agents) |
+| `src/rag/`      | Document ingestion, chunking, embeddings, retrieval       |
+| `src/workflow/` | LangGraph state, nodes, graph, router                     |
+| `src/tools/`    | LangChain tools (market data, calculators, news, etc.)    |
+| `src/web_app/`  | Streamlit application                                     |
+| `src/utils/`    | Utility functions and helpers                             |
+| `src/data/`     | Documents and vector database assets                      |
+| `tests/`        | Pytest test suite                                         |
+| `.env`          | API keys and environment variables                        |
+
+---
+
+# Current Capabilities
+
+### Finance Knowledge Assistant
+
+Ask finance-related questions such as:
+
+* What is SIP?
+* What are ETFs?
+* Explain mutual funds.
+* Difference between SIP and lump sum investing.
+
+The assistant retrieves relevant financial content from its knowledge base and generates grounded responses.
+
+---
+
+### Live Market Intelligence
+
+Ask market-related questions such as:
+
+* What is Apple stock price?
+* What is Tesla stock price?
+* What is NVIDIA stock price?
+
+The assistant fetches live market data using Yahoo Finance and responds using tool calling.
+
+---
+
+### Multi-Agent Routing
+
+The system automatically routes user queries to the correct agent:
+
+```text
+"What is SIP?"
+        ↓
+ Finance QA Agent
+
+"What is Apple stock price?"
+        ↓
+ Market Agent
+```
+
+---
+
+# Implemented Features
 
 ## RAG Pipeline
 
-* [x] URL-based document ingestion using `WebBaseLoader`
-* [x] Loaded financial educational content from Investopedia
-* [x] Implemented document chunking using `RecursiveCharacterTextSplitter`
-* [x] Generated embeddings using OpenAI `text-embedding-3-large`
-* [x] Created FAISS vector database
-* [x] Implemented semantic similarity retrieval
-* [x] Built prompt generation pipeline for grounded responses
+* [x] URL-based document ingestion using WebBaseLoader
+* [x] Financial content ingestion from Investopedia
+* [x] Recursive document chunking
+* [x] OpenAI embeddings (`text-embedding-3-large`)
+* [x] FAISS vector database
+* [x] Semantic similarity retrieval
+* [x] Grounded prompt generation
+* [x] Retrieval-Augmented Generation workflow
 
-## AI Agent
+---
 
-* [x] Created Finance QA Agent
-* [x] Connected retriever + prompt + OpenAI LLM
-* [x] Implemented grounded response generation using RAG
-* [x] Successfully answered finance-related questions using retrieved context
+## Finance QA Agent
+
+* [x] Finance-focused system prompt
+* [x] RAG-powered question answering
+* [x] Context-aware retrieval pipeline
+* [x] Grounded financial responses
+
+---
+
+## Market Agent
+
+* [x] Dedicated Market Intelligence Agent
+* [x] OpenAI tool calling
+* [x] Yahoo Finance integration
+* [x] Live stock price retrieval
+* [x] Ticker symbol support
+* [x] Tool execution workflow
+* [x] ToolMessage → LLM response loop
+
+---
+
+## LangGraph Workflow
+
+* [x] State management
+* [x] Finance QA node
+* [x] Market Agent node
+* [x] Router node
+* [x] Conditional routing
+* [x] Multi-agent orchestration
+
+---
+
+## Streamlit Application
+
+* [x] Interactive web UI
+* [x] LangGraph integration
+* [x] RAG integration
+* [x] Market Agent integration
+* [x] Chat-style query interface
+
+---
+
+## Testing
+
+* [x] Pytest setup
+* [x] Router tests
+* [x] Graph compilation tests
+* [x] Market tool tests
+
+---
 
 ## Environment & Setup
 
 * [x] Virtual environment setup
 * [x] OpenAI API integration
+* [x] Environment variable management
 * [x] Modular project structure
 * [x] GitHub repository setup
 
 ---
 
-## Quick Start
+# Quick Start
+
+## Clone Repository
 
 ```bash
-# 1. Clone and enter the project
+git clone <repo_url>
+
 cd ai_finance_assistant
+```
 
-# 2. Create virtual environment
+## Create Virtual Environment
+
+```bash
 python3 -m venv .venv
+
 source .venv/bin/activate
+```
 
-# 3. Install dependencies
+## Install Dependencies
+
+```bash
 python3 -m pip install -r requirements.txt
+```
 
-# 4. Configure environment
-# Add API keys inside .env
+## Configure Environment
 
-# 5. Run project
-python main.py
+Create a `.env` file:
 
-# 6. Launch Streamlit UI
+```text
+OPENAI_API_KEY=your_openai_api_key
+```
+
+## Launch Application
+
+```bash
 streamlit run src/web_app/app.py
 ```
 
 ---
 
-## Configuration
+# Example Queries
 
-All tuneable parameters live in `config.yaml`.
-
-API keys go inside `.env`:
+## Finance QA
 
 ```text
-OPENAI_API_KEY=your_api_key
-NEWS_API_KEY=your_news_api_key
+What is SIP?
+```
+
+```text
+Explain mutual funds.
+```
+
+```text
+What are ETFs?
+```
+
+```text
+Difference between SIP and lump sum investing.
+```
+
+## Market Agent
+
+```text
+What is Apple stock price?
+```
+
+```text
+What is Tesla stock price?
+```
+
+```text
+What is NVIDIA stock price?
 ```
 
 ---
 
-## Development Roadmap
+# Development Roadmap
 
-### Core RAG
-
-* [x] Implement document ingestion
-* [x] Implement chunking
-* [x] Create embeddings
-* [x] Create vector database
-* [x] Implement retriever
-* [x] Build Finance QA Agent
-
-### Conversational AI
+## Conversational AI
 
 * [ ] Add conversation memory
-* [ ] Build Streamlit conversational UI
 * [ ] Add chat history persistence
-* [ ] Add source citations in responses
+* [ ] Add source citations
+* [ ] Add session management
 
-### Multi-Agent System
+---
 
-* [ ] Build LangGraph workflow
-* [ ] Add router for intent classification
-* [ ] Implement Market Agent
-* [ ] Implement Portfolio Agent
-* [ ] Implement News Agent
-* [ ] Implement Tax Agent
-* [ ] Implement Goal Planner Agent
-* [ ] Implement Compliance Agent
+## Router Improvements
 
-### Real-Time Integrations
+* [ ] Upgrade keyword router to LLM router
+* [ ] Add fallback routing
+* [ ] Add confidence scoring
+* [ ] Add routing observability
 
-* [ ] Integrate Yahoo Finance API
-* [ ] Integrate News APIs
-* [ ] Add real-time market analysis
-* [ ] Add portfolio analytics
+---
 
-### Advanced Features
+## Market Intelligence
 
-* [ ] Add memory and personalization
-* [ ] Add MCP server integration
-* [ ] Add voice interface
-* [ ] Add advanced financial analytics
-* [ ] Add risk analysis tools
-* [ ] Add investment recommendation workflows
+* [x] Live stock prices
+* [ ] Historical stock prices
+* [ ] ETF analysis
+* [ ] Company fundamentals
+* [ ] Market trend analysis
+* [ ] Financial ratios
+* [ ] Earnings analysis
 
-### Testing & Production
+---
 
-* [ ] Add unit tests
-* [ ] Add integration tests
-* [ ] Improve logging and monitoring
-* [ ] Add deployment configuration
-* [ ] Optimize performance
+## Additional Agents
+
+* [ ] Portfolio Analysis Agent
+* [ ] Financial News Agent
+* [ ] Goal Planning Agent
+* [ ] Tax Agent
+* [ ] Compliance Agent
+
+---
+
+## Advanced Features
+
+* [ ] Personalization & Memory
+* [ ] MCP Integration
+* [ ] Financial Calculators
+* [ ] Risk Analysis Engine
+* [ ] Portfolio Optimization
+* [ ] Investment Recommendation Workflows
+* [ ] Voice Interface
+
+---
+
+## Testing & Production
+
+* [x] Unit test framework
+* [x] Router tests
+* [x] Graph tests
+* [ ] Integration tests
+* [ ] End-to-end tests
+* [ ] Logging & Monitoring
+* [ ] Dockerization
+* [ ] CI/CD Pipeline
+* [ ] Cloud Deployment
+* [ ] Performance Optimization
+
+---
+
+# Tech Stack
+
+* LangChain
+* LangGraph
+* OpenAI GPT-4o
+* OpenAI Embeddings
+* FAISS
+* Streamlit
+* Yahoo Finance (yfinance)
+* Python
+* Pytest
+
+---
+
+# Current Status
+
+### Completed
+
+* RAG Pipeline
+* Finance QA Agent
+* Market Agent
+* Yahoo Finance Tool Integration
+* LangGraph Workflow
+* Router
+* Streamlit UI
+* Automated Tests
+
+### In Progress
+
+* Memory
+* Portfolio Agent
+* Historical Market Data
+* Enhanced Routing
+
+### Planned
+
+* News Agent
+* Tax Agent
+* Goal Planner Agent
+* MCP Integration
+* Production Deployment
