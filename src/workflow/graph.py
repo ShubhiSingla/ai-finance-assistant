@@ -5,6 +5,7 @@ from src.workflow.state import FinanceAgentState
 from src.workflow.nodes import (
     finance_qa_node,
     market_agent_node,
+    portfolio_agent_node,
     router_node
     )
 
@@ -29,6 +30,11 @@ def build_graph():
         market_agent_node
     )
 
+    graph_builder.add_node(
+        "portfolio_agent",
+        portfolio_agent_node
+    )
+
     graph_builder.add_edge(
     START,
     "router"
@@ -39,7 +45,8 @@ def build_graph():
         lambda state: state["route"],
         {
             "finance_qa": "finance_qa",
-            "market_agent": "market_agent"
+            "market_agent": "market_agent",
+            "portfolio_agent": "portfolio_agent"
         }
     )
 
@@ -50,6 +57,11 @@ def build_graph():
 
     graph_builder.add_edge(
         "market_agent",
+        END
+    )
+
+    graph_builder.add_edge(
+        "portfolio_agent",
         END
     )
 

@@ -1,9 +1,10 @@
-from langchain_core.messages import HumanMessage
-from langchain_core.messages import ToolMessage
-
 from src.agents.finance_qa_agent import finance_qa_agent
 from src.agents.market_agent import market_agent
 from src.tools.market_data import get_stock_price
+from src.agents.portfolio_agent import portfolio_agent
+from src.tools.portfolio_tools import analyze_portfolio
+from langchain_core.messages import ToolMessage
+from src.agents.router_agent import router_agent
 
 
 def finance_qa_node(state):
@@ -24,15 +25,13 @@ def finance_qa_node(state):
 
 def market_agent_node(state):
 
-    query = state["user_query"]
+    messages = state["chat_history"]
+
+    messages = state["chat_history"]
 
     response = market_agent.invoke(
         {
-            "messages": [
-                HumanMessage(
-                    content=query
-                )
-            ]
+            "messages": messages
         }
     )
 
@@ -47,6 +46,13 @@ def market_agent_node(state):
         tool_call["args"]
     )
 
+    #If the tool returned an error, return it directly
+    if tool_result["status"] == "error":
+        return {
+        "response": tool_result["message"]
+        }
+    
+
     tool_message = ToolMessage(
         content=str(tool_result),
         tool_call_id=tool_call["id"]
@@ -54,13 +60,10 @@ def market_agent_node(state):
 
     final_response = market_agent.invoke(
         {
-            "messages": [
-                HumanMessage(
-                    content=query
-                ),
-                response,
-                tool_message
-            ]
+            "messages": messages + [
+            response,
+            tool_message
+        ]
         }
     )
 
@@ -71,28 +74,57 @@ def market_agent_node(state):
 
 def router_node(state):
 
-    query = state["user_query"].lower()
+    messages = state["chat_history"]
 
-    market_keywords = [
-        "stock",
-        "share",
-        "price",
-        "ticker",
-        "market",
-        "apple",
-        "tesla",
-        "aapl",
-        "tsla",
-        "nvda",
-        "nvidia"
-    ]
+    response = router_agent.invoke(
+        {
+            "messages": messages
+        }
+    )
 
-    for keyword in market_keywords:
-        if keyword in query:
-            return {
-                "route": "market_agent"
-            }
+    route = response.content.strip()
+
+    print("Router selected:", route)
 
     return {
-        "route": "finance_qa"
+        "route": route
+    }
+
+def portfolio_agent_node(state):
+
+    messages = state["chat_history"]
+
+    response = portfolio_agent.invoke(
+        {
+            "messages": messages
+        }
+    )
+
+    if not response.tool_calls:
+        return {
+            "response": response.content
+        }
+
+    tool_call = response.tool_calls[0]
+
+    tool_result = analyze_portfolio.invoke(
+        tool_call["args"]
+    )
+
+    tool_message = ToolMessage(
+        content=str(tool_result),
+        tool_call_id=tool_call["id"]
+    )
+
+    final_response = portfolio_agent.invoke(
+        {
+            "messages": messages + [
+            response,
+            tool_message
+        ]
+        }
+    )
+
+    return {
+        "response": final_response.content
     }
