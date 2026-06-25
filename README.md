@@ -20,7 +20,7 @@ The assistant helps users learn financial concepts, retrieve live stock prices, 
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
                               User
@@ -63,7 +63,7 @@ The assistant helps users learn financial concepts, retrieve live stock prices, 
 
 ---
 
-# Project Structure
+## Project Structure
 
 ```text
 ai_finance_assistant/
@@ -104,702 +104,207 @@ ai_finance_assistant/
 └── README.md
 ```
 
-## Folder Description
-
 | Folder | Description |
 |----------|-------------|
-| `agents/` | Contains all AI agents such as Finance QA, Market, Portfolio, and LLM Router Agent. |
-| `rag/` | Implements the complete Retrieval-Augmented Generation (RAG) pipeline including document ingestion, chunking, embeddings, retrieval, and prompt generation. |
+| `agents/` | Contains all AI agents: Finance QA, Market, Portfolio, and LLM Router. |
+| `rag/` | Implements the complete RAG pipeline including document ingestion, chunking, embeddings, retrieval, and prompt generation. |
 | `workflow/` | Defines the LangGraph workflow including state management, nodes, routing, and graph orchestration. |
-| `tools/` | Contains LangChain tools used by AI agents, such as live stock price retrieval and portfolio analysis. |
+| `tools/` | Contains LangChain tools for live stock price retrieval and portfolio analysis. |
 | `web_app/` | Streamlit-based conversational web application. |
 | `data/` | Stores documents and vector database files used by the RAG pipeline. |
 | `tests/` | Unit tests for tools, agents, router, and LangGraph workflow. |
 
 ---
 
-# Specialized AI Agents
+## Specialized AI Agents
 
 The AI Finance Assistant follows a multi-agent architecture where each agent is responsible for a specific task. An LLM-based Router Agent analyzes the user's query and conversation history, then forwards the request to the most appropriate specialized agent.
 
 ---
 
-## 1. Finance QA Agent
+### 1. Finance QA Agent
 
-### Purpose
+Answers finance-related educational questions using a RAG pipeline. Instead of relying only on the LLM's pre-trained knowledge, it retrieves relevant information from a financial knowledge base before generating a grounded response.
 
-The Finance QA Agent answers finance-related educational questions using a Retrieval-Augmented Generation (RAG) pipeline. Instead of relying only on the LLM's pre-trained knowledge, it retrieves relevant information from a financial knowledge base before generating a grounded response.
+**Technologies:** LangChain · OpenAI GPT-4.1-mini · OpenAI Embeddings · FAISS · WebBaseLoader · Investopedia Knowledge Base
 
-### Workflow
-
+**Workflow:**
 ```text
-User Question
-      │
-      ▼
-Retrieve Relevant Documents (FAISS)
-      │
-      ▼
-Build Prompt
-      │
-      ▼
-OpenAI GPT-4.1-mini
-      │
-      ▼
-Grounded Response
+User Question → Retrieve Relevant Documents (FAISS) → Build Prompt → GPT-4.1-mini → Grounded Response
 ```
 
-### Technologies Used
-
-- LangChain
-- OpenAI GPT-4.1-mini
-- OpenAI Embeddings
-- FAISS
-- WebBaseLoader
-- Investopedia Knowledge Base
-
-### Example Questions
-
-```text
+**Example Questions:**
+```
 What is SIP?
-
 Explain Mutual Funds.
-
 What is an ETF?
-
 Difference between SIP and Lump Sum.
 ```
 
 ---
 
-## 2. Market Agent
+### 2. Market Agent
 
-### Purpose
+Retrieves live stock market information using Yahoo Finance. Uses LangChain Tool Calling to identify when a tool is required, fetches live market data, and generates a natural language response.
 
-The Market Agent retrieves live stock market information using Yahoo Finance. It uses LangChain Tool Calling to identify when a tool is required, fetches live market data, and then generates a natural language response for the user.
+**Technologies:** LangChain Tool Calling · OpenAI GPT-4o · Yahoo Finance (yfinance)
 
-### Workflow
-
+**Workflow:**
 ```text
-User Question
-      │
-      ▼
-OpenAI GPT-4o
-      │
-      ▼
-Tool Call
-      │
-      ▼
-Yahoo Finance Tool
-      │
-      ▼
-Tool Result
-      │
-      ▼
-ToolMessage
-      │
-      ▼
-OpenAI GPT-4o
-      │
-      ▼
-Final Response
+User Question → GPT-4o → Tool Call → Yahoo Finance → Tool Result → ToolMessage → GPT-4o → Final Response
 ```
 
-### Technologies Used
-
-- LangChain Tool Calling
-- OpenAI GPT-4o
-- Yahoo Finance (yfinance)
-
-### Example Questions
-
-```text
+**Example Questions:**
+```
 What is Apple's stock price?
-
 What is Tesla's current stock price?
-
 Should I buy Apple stock?
 ```
 
 ---
 
-## 3. Portfolio Agent
+### 3. Portfolio Agent
 
-### Purpose
+Analyzes a user's investment portfolio and provides insights into allocation, diversification, concentration risk, and improvement suggestions. Uses a custom portfolio analysis tool with OpenAI Tool Calling.
 
-The Portfolio Agent analyzes a user's investment portfolio and provides insights into portfolio allocation, diversification, concentration risk, and possible improvements. It uses a custom portfolio analysis tool together with OpenAI Tool Calling.
+**Technologies:** LangChain Tool Calling · OpenAI GPT-4o · Custom Portfolio Analysis Tool
 
-### Workflow
-
+**Workflow:**
 ```text
-User Portfolio
-      │
-      ▼
-OpenAI GPT-4o
-      │
-      ▼
-Tool Call
-      │
-      ▼
-Portfolio Analysis Tool
-      │
-      ▼
-Tool Result
-      │
-      ▼
-ToolMessage
-      │
-      ▼
-OpenAI GPT-4o
-      │
-      ▼
-Portfolio Insights
+User Portfolio → GPT-4o → Tool Call → Portfolio Analysis Tool → Tool Result → ToolMessage → GPT-4o → Portfolio Insights
 ```
 
-### Technologies Used
-
-- LangChain Tool Calling
-- OpenAI GPT-4o
-- Custom Portfolio Analysis Tool
-
-### Example Questions
-
-```text
+**Example Questions:**
+```
 Analyze my portfolio.
-
 Is my portfolio diversified?
-
 How risky is my portfolio?
-
 How can I reduce the risk?
 ```
 
-### Current Capabilities
-
-- Calculate total portfolio value
-- Calculate asset allocation percentages
-- Analyze portfolio diversification
-- Detect concentration risk
-- Identify portfolio strengths
-- Highlight areas for improvement
+**Capabilities:**
+- Calculate total portfolio value and asset allocation percentages
+- Analyze portfolio diversification and detect concentration risk
+- Identify portfolio strengths and areas for improvement
 - Provide investment suggestions and rebalancing recommendations
 
-## 4. LLM Router Agent
-
-### Purpose
-
-The LLM Router Agent is responsible for selecting the most appropriate specialized agent for every user request. Instead of relying on keyword matching, it analyzes both the current user query and the complete conversation history before making a routing decision.
-
-### Workflow
-
-Conversation History
-        │
-        ▼
-Current User Query
-        │
-        ▼
-OpenAI GPT-4.1-mini
-        │
-        ▼
-Route Selection
-        │
-        ├───────────────┬────────────────┐
-        ▼               ▼                ▼
-finance_qa       market_agent     portfolio_agent
-
-### Technologies Used
-
-- LangGraph
-- LangChain
-- OpenAI GPT-4.1-mini
-
-### Current Capabilities
-
-- Intent Classification
-- Conversation-aware Routing
-- Multi-turn Follow-up Support
-- Dynamic Agent Selection
-
 ---
 
-# LangGraph Workflow
+### 4. LLM Router Agent
 
-The AI Finance Assistant uses **LangGraph** to orchestrate multiple specialized AI agents. Every user request flows through a centralized workflow where the Router Agent first determines which specialized agent should handle the request.
+Selects the most appropriate specialized agent for every user request. Analyzes both the current user query and the complete conversation history to make a context-aware routing decision — enabling correct handling of follow-up questions without keyword matching.
 
-```text
-                         User Query
-                              │
-                              ▼
-                Update Conversation History
-                              │
-                              ▼
-                FinanceAgentState (LangGraph)
-                              │
-                              ▼
-                     LLM Router Agent
-          (Analyzes the complete conversation)
-                              │
-      ┌───────────────────────┼───────────────────────┐
-      ▼                       ▼                       ▼
-Finance QA Agent       Market Agent         Portfolio Agent
-      │                       │                       │
-      ▼                       ▼                       ▼
- RAG Pipeline         Yahoo Finance Tool     Portfolio Tool
-      │                       │                       │
-      └───────────────────────┼───────────────────────┘
-                              ▼
-                      Generate Response
-                              │
-                              ▼
-                     Return to Streamlit
+**Technologies:** LangGraph · LangChain · OpenAI GPT-4.1-mini
+
+**Routes:**
+- `finance_qa` — Finance concepts, definitions, educational questions
+- `market_agent` — Live stock prices, market data, trading decisions
+- `portfolio_agent` — Portfolio analysis, diversification, risk assessment
+
+**Multi-turn Example:**
 ```
+User: What is Apple's current stock price?   → Market Agent
+User: Should I buy it?                       → Market Agent ✅ (understands "it" = Apple)
 
-The workflow is coordinated using **FinanceAgentState**, which stores the current user query, conversation history, vector store, router decision, and final response. Each node in the graph performs a single responsibility, making the application modular, easy to maintain, and straightforward to extend with additional agents in the future.
-
----
-
-# LLM Router Agent
-
-The AI Finance Assistant uses an **LLM-based Router Agent** to determine which specialized agent should answer a user's request.
-
-Unlike a traditional keyword-based router, the Router Agent analyzes the **complete conversation history** along with the current user query. This enables the assistant to correctly understand conversational follow-up questions and route them to the appropriate agent.
-
----
-
-## Routing Workflow
-
-```text
-Conversation History
-        │
-        ▼
-Current User Query
-        │
-        ▼
-OpenAI GPT-4.1-mini
-        │
-        ▼
-Classify Request
-        │
-        ├───────────────┬────────────────┐
-        ▼               ▼                ▼
-finance_qa       market_agent     portfolio_agent
+User: Analyze my portfolio.                  → Portfolio Agent
+User: How can I reduce the risk?             → Portfolio Agent ✅ (understands prior context)
 ```
-
-The Router Agent returns only one of the following routes:
-
-- `finance_qa`
-- `market_agent`
-- `portfolio_agent`
-
-LangGraph then forwards the request to the selected agent.
-
----
-
-## Example Routing
-
-### Finance Questions
-
-```text
-What is SIP?
-
-Explain Mutual Funds.
-
-Difference between ETF and Mutual Fund.
-```
-
-↓
-
-Finance QA Agent
-
----
-
-### Market Questions
-
-```text
-What is Apple's current stock price?
-
-Should I buy Apple stock?
-
-Compare Apple and Tesla.
-```
-
-↓
-
-Market Agent
-
----
-
-### Portfolio Questions
-
-```text
-Analyze my portfolio.
-
-Is my portfolio diversified?
-
-How can I reduce the risk?
-```
-
-↓
-
-Portfolio Agent
-
----
-
-## Multi-turn Conversation Support
-
-One of the biggest advantages of using an LLM Router is its ability to understand follow-up questions.
-
-Example:
-
-```text
-User:
-What is Apple's current stock price?
-
-↓
-
-Market Agent
-
-User:
-Should I buy it?
-
-↓
-
-Market Agent ✅
-```
-
-The Router understands that **"it" refers to Apple stock**, even though the company name is not mentioned in the second question.
-
-Similarly,
-
-```text
-User:
-Analyze my portfolio.
-
-↓
-
-Portfolio Agent
-
-User:
-How can I reduce the risk?
-
-↓
-
-Portfolio Agent ✅
-```
-
-The Router understands that the follow-up question refers to the previously analyzed portfolio.
-
-This conversational routing significantly improves the user experience compared to a traditional keyword-based router.
----
-
-# RAG Pipeline
-
-The **Finance QA Agent** uses a Retrieval-Augmented Generation (RAG) pipeline to answer finance-related questions. Instead of relying solely on the LLM's pre-trained knowledge, the agent first retrieves relevant information from a financial knowledge base and then uses that context to generate a grounded response.
-
-## Workflow
-
-```text
-Financial Documents
-(Investopedia Articles)
-        │
-        ▼
-WebBaseLoader
-        │
-        ▼
-Recursive Character Text Splitter
-        │
-        ▼
-OpenAI Embeddings
-(text-embedding-3-large)
-        │
-        ▼
-FAISS Vector Store
-        │
-        ▼
-Similarity Search Retriever
-        │
-        ▼
-Relevant Context
-        │
-        ▼
-Prompt Builder
-        │
-        ▼
-OpenAI GPT-4.1-mini
-        │
-        ▼
-Grounded Response
-```
-
-### Technologies Used
-
-- WebBaseLoader
-- RecursiveCharacterTextSplitter
-- OpenAI Embeddings (`text-embedding-3-large`)
-- FAISS Vector Store
-- Similarity Search Retriever
-- OpenAI GPT-4.1-mini
-
-### How It Works
-
-1. Financial articles are loaded from trusted sources using **WebBaseLoader**.
-2. The documents are split into smaller chunks using **RecursiveCharacterTextSplitter**.
-3. Each chunk is converted into vector embeddings using **OpenAI Embeddings**.
-4. The embeddings are stored in a **FAISS Vector Store** for efficient similarity search.
-5. When a user asks a finance-related question, the retriever finds the most relevant document chunks.
-6. The retrieved context is combined with the user's question to build a grounded prompt.
-7. **GPT-4.1-mini** generates the final response using both the retrieved context and the user's query.
-```
-
----
-
-# Tool Calling Workflow
-
-The **Market Agent** and **Portfolio Agent** use **LangChain Tool Calling** to interact with external tools. Instead of generating answers directly, the LLM first determines whether a tool is required. If a tool is needed, it generates a structured tool call, executes the tool, receives the result, and then uses that result to generate a natural language response.
-
-```text
-                 User Query
-                      │
-                      ▼
-              OpenAI Language Model
-                      │
-          Does a tool need to be called?
-                      │
-                Yes ──┴── No
-                 │          │
-                 ▼          ▼
-          Generate Tool Call   Generate Response
-                 │
-                 ▼
-           Execute Tool
-                 │
-                 ▼
-           Receive Tool Result
-                 │
-                 ▼
-          Create ToolMessage
-                 │
-                 ▼
-      OpenAI Language Model
-                 │
-                 ▼
-          Final AI Response
-```
-
-### Market Agent
-
-The Market Agent uses the **Yahoo Finance Tool** to retrieve real-time stock market information.
-
-Example:
-
-```text
-User:
-What is Apple's current stock price?
-
-↓
-
-OpenAI generates a tool call
-
-↓
-
-get_stock_price("AAPL")
-
-↓
-
-Yahoo Finance returns live stock data
-
-↓
-
-The result is converted into a ToolMessage
-
-↓
-
-OpenAI generates the final response
-```
-
----
-
-### Portfolio Agent
-
-The Portfolio Agent uses a **custom portfolio analysis tool** to calculate investment metrics before generating recommendations.
-
-Example:
-
-```text
-User:
-Analyze my portfolio
-
-↓
-
-OpenAI generates a tool call
-
-↓
-
-analyze_portfolio(...)
-
-↓
-
-Portfolio metrics are calculated
-
-↓
-
-The result is converted into a ToolMessage
-
-↓
-
-OpenAI generates portfolio insights and recommendations
-```
-
----
-
-# Implemented Features
-
-## Retrieval-Augmented Generation (RAG)
-
-- ✅ Financial document ingestion using WebBaseLoader
-- ✅ Recursive document chunking
-- ✅ OpenAI Embeddings (`text-embedding-3-large`)
-- ✅ FAISS Vector Database
-- ✅ Semantic Similarity Search
-- ✅ Context Retrieval
-- ✅ Prompt Construction
-- ✅ Grounded Response Generation
-
----
-
-## Finance QA Agent
-
-- ✅ RAG-powered Finance Question Answering
-- ✅ Context-aware Prompt Generation
-- ✅ Grounded Responses
-- ✅ Finance Knowledge Base Integration
-
----
-
-## Market Agent
-
-- ✅ OpenAI Tool Calling
-- ✅ Yahoo Finance Integration
-- ✅ Live Stock Price Retrieval
-- ✅ Company Information Retrieval
-- ✅ Multi-turn Market Conversations
-- ✅ Graceful API Error Handling
-
----
-
-## Portfolio Agent
-
-- ✅ Portfolio Analysis Tool
-- ✅ Portfolio Value Calculation
-- ✅ Asset Allocation Analysis
-- ✅ Diversification Analysis
-- ✅ Concentration Risk Detection
-- ✅ Investment Suggestions
-- ✅ Tool Calling Workflow
-
----
-
-## LLM Router
-
-- ✅ Conversation-aware Routing
-- ✅ Multi-turn Query Understanding
-- ✅ Intelligent Agent Selection
-- ✅ Dynamic Routing using GPT-4.1-mini
 
 ---
 
 ## LangGraph Workflow
 
-- ✅ FinanceAgentState
-- ✅ LLM Router Node
-- ✅ Finance QA Node
-- ✅ Market Agent Node
-- ✅ Portfolio Agent Node
-- ✅ Conditional Routing
-- ✅ Multi-Agent Orchestration
+The AI Finance Assistant uses **LangGraph** to orchestrate multiple specialized AI agents. Every user request flows through a centralized workflow where the Router Agent first determines which specialized agent should handle the request.
 
----
-
-## Streamlit Application
-
-- ✅ Conversational Chat Interface
-- ✅ Session-based Chat History
-- ✅ Cached Vector Store
-- ✅ Cached LangGraph Workflow
-- ✅ Interactive User Experience
-
----
-
-## Testing
-
-- ✅ LangGraph Workflow Tests
-- ✅ Router Tests
-- ✅ Market Tool Tests
-- ✅ Portfolio Tool Tests
-- ✅ Portfolio Agent Tests
-
----
-
-# Example Queries
-
-## Finance QA Agent
+The workflow is coordinated using **FinanceAgentState**, which stores the current user query, conversation history, vector store, router decision, and final response. Each node in the graph performs a single responsibility, making the application modular, easy to maintain, and straightforward to extend.
 
 ```text
-What is SIP?
-
-Explain Mutual Funds.
-
-What is an ETF?
-
-Difference between ETF and Mutual Fund.
+User Query → Update Conversation History → FinanceAgentState → LLM Router Agent
+    │
+    ├──→ Finance QA Agent → RAG Pipeline
+    ├──→ Market Agent → Yahoo Finance Tool
+    └──→ Portfolio Agent → Portfolio Tool
+    │
+    └──→ Generate Response → Return to Streamlit
 ```
 
 ---
 
-## Market Agent
+## RAG Pipeline
+
+The Finance QA Agent uses a RAG pipeline to answer finance-related questions by retrieving relevant information from a financial knowledge base before generating a response.
 
 ```text
-What is Apple's current stock price?
-
-What is Tesla's current stock price?
-
-Compare Apple and NVIDIA.
-
-Should I buy Apple stock?
+Financial Documents (Investopedia)
+    → WebBaseLoader
+    → RecursiveCharacterTextSplitter
+    → OpenAI Embeddings (text-embedding-3-large)
+    → FAISS Vector Store
+    → Similarity Search Retriever
+    → Prompt Builder
+    → GPT-4.1-mini
+    → Grounded Response
 ```
 
 ---
 
-## Portfolio Agent
+## Tool Calling Workflow
+
+The Market Agent and Portfolio Agent use **LangChain Tool Calling** to interact with external tools. The LLM determines whether a tool is required, generates a structured tool call, executes it, and uses the result to produce a natural language response.
 
 ```text
-Analyze my portfolio.
-
-Is my portfolio diversified?
-
-How risky is my portfolio?
-
-How can I reduce the risk?
-```
-
-Example Portfolio
-
-```text
-Apple
-10 shares
-Price: 290
-
-Tesla
-5 shares
-Price: 320
-
-NVIDIA
-8 shares
-Price: 170
+User Query → LLM → Tool Call? ──Yes──→ Execute Tool → ToolMessage → LLM → Final Response
+                         └──No──→ Generate Response directly
 ```
 
 ---
 
-# Tech Stack
+## Implemented Features
+
+### RAG
+- ✅ Financial document ingestion, chunking, embeddings, FAISS vector store, semantic search, prompt construction, grounded response generation
+
+### Finance QA Agent
+- ✅ RAG-powered Q&A · Context-aware prompts · Finance knowledge base integration
+
+### Market Agent
+- ✅ Tool calling · Yahoo Finance integration · Live stock & company data · Multi-turn conversations · Graceful error handling
+
+### Portfolio Agent
+- ✅ Portfolio analysis tool · Value & allocation calculation · Diversification & concentration risk analysis · Investment suggestions
+
+### LLM Router
+- ✅ Conversation-aware routing · Multi-turn query understanding · Dynamic agent selection via GPT-4.1-mini
+
+### LangGraph Workflow
+- ✅ FinanceAgentState · Router, QA, Market, and Portfolio nodes · Conditional routing · Multi-agent orchestration
+
+### Streamlit Application
+- ✅ Conversational chat interface · Session-based history · Cached vector store & workflow
+
+### Testing
+- ✅ Workflow · Router · Market tool · Portfolio tool · Portfolio agent tests
+
+---
+
+## Example Queries
+
+**Finance QA:** `What is SIP?` · `Explain Mutual Funds.` · `What is an ETF?` · `Difference between ETF and Mutual Fund.`
+
+**Market:** `What is Apple's current stock price?` · `Compare Apple and NVIDIA.` · `Should I buy Apple stock?`
+
+**Portfolio:** `Analyze my portfolio.` · `Is my portfolio diversified?` · `How can I reduce the risk?`
+
+**Example Portfolio Input:**
+```
+Apple  — 10 shares @ $290
+Tesla  — 5 shares  @ $320
+NVIDIA — 8 shares  @ $170
+```
+
+---
+
+## Tech Stack
 
 | Technology | Purpose |
 |------------|---------|
@@ -808,7 +313,7 @@ Price: 170
 | LangChain | LLM integration and Tool Calling |
 | OpenAI GPT-4.1-mini | Finance QA Agent & LLM Router |
 | OpenAI GPT-4o | Market Agent & Portfolio Agent |
-| OpenAI Embeddings | Vector Embeddings |
+| OpenAI Embeddings (`text-embedding-3-large`) | Vector Embeddings |
 | FAISS | Vector Database |
 | Yahoo Finance (yfinance) | Live Market Data |
 | Streamlit | Web Application |
@@ -817,66 +322,54 @@ Price: 170
 
 ---
 
-# Roadmap
+## Roadmap
 
-## Conversational AI
+### Conversational AI
+- [x] Session-based Chat History · Multi-turn Conversations
+- [ ] Persistent User Memory · Cross-session Memory · Source Citations
 
-- [x] Session-based Chat History
-- [x] Multi-turn Conversations
-- [ ] Persistent User Memory
-- [ ] Cross-session Memory
-- [ ] Source Citations
+### Agents
+- [x] Finance QA · Market · Portfolio · LLM Router
+- [ ] Goal Planner · Financial News · Tax · Compliance
 
----
-
-## Agents
-
-- [x] Finance QA Agent
-- [x] Market Agent
-- [x] Portfolio Agent
-- [x] LLM Router Agent
-- [ ] Goal Planner Agent
-- [ ] Financial News Agent
-- [ ] Tax Agent
-- [ ] Compliance Agent
-
----
-
-## Market Intelligence
-
+### Market Intelligence
 - [x] Live Stock Prices
-- [ ] Historical Stock Prices
-- [ ] ETF Analysis
-- [ ] Company Fundamentals
-- [ ] Financial Ratios
-- [ ] Earnings Analysis
+- [ ] Historical Prices · ETF Analysis · Company Fundamentals · Financial Ratios · Earnings Analysis
+
+### Portfolio
+- [x] Portfolio Analysis · Diversification Analysis
+- [ ] Risk Score · Portfolio Optimization · Sector Analysis
+
+### Production
+- [ ] Pydantic Tool Schemas · Docker · CI/CD Pipeline · Logging & Monitoring · Cloud Deployment
 
 ---
 
-## Portfolio
+## Getting Started
 
-- [x] Portfolio Analysis
-- [x] Diversification Analysis
-- [ ] Risk Score
-- [ ] Portfolio Optimization
-- [ ] Sector Analysis
+```bash
+# Clone the repository
+git clone <repository-url>
+cd ai_finance_assistant
+
+# Create and activate a virtual environment
+python -m venv .venv
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment variables
+echo "OPENAI_API_KEY=your_api_key" > .env
+
+# Run the application
+streamlit run src/web_app/app.py
+```
 
 ---
 
-## Production
+## Future Enhancements
 
-- [ ] Pydantic Tool Schemas
-- [ ] Docker
-- [ ] CI/CD Pipeline
-- [ ] Logging & Monitoring
-- [ ] Cloud Deployment
-
----
-
-# Future Enhancements
-
-- Personalized Financial Planning
-- Goal-Based Investment Planning
+- Personalized & Goal-Based Financial Planning
 - News Summarization Agent
 - Voice Assistant
 - MCP Integration
@@ -886,10 +379,8 @@ Price: 170
 
 ---
 
-# Author
+## Author
 
 **Shubhi Singla**
 
-AI Finance Assistant is a personal engineering project built to explore modern AI application development using LangGraph, LangChain, Retrieval-Augmented Generation (RAG), Tool Calling, and Multi-Agent Architectures.
-
-The project demonstrates how specialized AI agents can collaborate to solve real-world financial tasks through intelligent routing, external tools, and modular workflows.
+AI Finance Assistant is a personal engineering project built to explore modern AI application development using LangGraph, LangChain, Retrieval-Augmented Generation (RAG), Tool Calling, and Multi-Agent Architectures. The project demonstrates how specialized AI agents can collaborate to solve real-world financial tasks through intelligent routing, external tools, and modular workflows.
