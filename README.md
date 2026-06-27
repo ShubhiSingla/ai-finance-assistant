@@ -16,6 +16,7 @@ The assistant helps users learn financial concepts, retrieve live stock prices, 
 - 🛠️ Tool Calling with LangChain
 - 💬 Conversational Chat Interface built with Streamlit
 - 💾 Session-based Conversation History
+- 📰 Financial News Retrieval and Summarization
 - ⚠️ Graceful Error Handling for External APIs
 
 ---
@@ -40,17 +41,18 @@ The assistant helps users learn financial concepts, retrieve live stock prices, 
                        LLM Router Agent
       (Understands the user's intent using conversation history)
                                 │
-        ┌───────────────────────┼────────────────────────┐
-        ▼                       ▼                        ▼
- Finance QA Agent        Market Agent         Portfolio Agent
-        │                       │                        │
-        ▼                       ▼                        ▼
-   RAG Pipeline         Yahoo Finance Tool     Portfolio Analysis Tool
-        │                       │                        │
-        ▼                       ▼                        ▼
- FAISS Retriever      Live Stock Prices      Portfolio Analytics
-        │                       │                        │
-        └───────────────────────┼────────────────────────┘
+        ┌───────────────────────┼──────────────────────┬────────────────────────┐
+        ▼                       ▼                      ▼                        ▼
+ Finance QA Agent        Market Agent         Portfolio Agent             News Agent
+        │                       │                      │                        │
+        ▼                       ▼                      ▼               ┌────────┴────────┐
+   RAG Pipeline         Yahoo Finance Tool  Portfolio Analysis Tool    ▼                 ▼
+        │                       │                      │         Yahoo Finance        NewsAPI
+        ▼                       ▼                      ▼           News Tool           Tool
+ FAISS Retriever      Live Stock Prices    Portfolio Analytics          │                 │
+        │                       │                      │               └────────┬────────┘
+        └───────────────────────┼──────────────────────┘                        │
+                                └────────────────────────────────────────────────┘
                                 ▼
                      OpenAI Language Models
                                 │
@@ -74,6 +76,7 @@ ai_finance_assistant/
 │   ├── finance_qa_agent.py
 │   ├── market_agent.py
 │   ├── portfolio_agent.py
+│   ├── news_agent.py
 │   └── router_agent.py
 │
 ├── rag/
@@ -91,7 +94,9 @@ ai_finance_assistant/
 │
 ├── tools/
 │   ├── market_data.py
-│   └── portfolio_tools.py
+│   ├── portfolio_tools.py
+│   ├── news_tools.py
+│   └── yahoo_news.py
 │
 ├── web_app/
 │   └── app.py
@@ -109,7 +114,7 @@ ai_finance_assistant/
 | `agents/` | Contains all AI agents: Finance QA, Market, Portfolio, and LLM Router. |
 | `rag/` | Implements the complete RAG pipeline including document ingestion, chunking, embeddings, retrieval, and prompt generation. |
 | `workflow/` | Defines the LangGraph workflow including state management, nodes, routing, and graph orchestration. |
-| `tools/` | Contains LangChain tools for live stock price retrieval and portfolio analysis. |
+| `tools/` | Contains LangChain tools for live stock price retrieval, portfolio analysis, and financial news retrieval. |
 | `web_app/` | Streamlit-based conversational web application. |
 | `data/` | Stores documents and vector database files used by the RAG pipeline. |
 | `tests/` | Unit tests for tools, agents, router, and LangGraph workflow. |
@@ -190,7 +195,29 @@ How can I reduce the risk?
 
 ---
 
-### 4. LLM Router Agent
+### 4. News Agent
+
+Retrieves and summarizes financial news from multiple sources. Uses LangChain Tool Calling to automatically select between Yahoo Finance News and NewsAPI depending on the nature of the query — Yahoo Finance for company-specific news and NewsAPI for broader financial topics such as inflation, interest rates, Federal Reserve announcements, and general market news. The LLM generates a concise summary of the retrieved articles.
+
+**Technologies:** LangChain Tool Calling · OpenAI GPT-4o · Yahoo Finance News · NewsAPI
+
+**Workflow:**
+```text
+User Question → GPT-4o → Tool Selection → Yahoo Finance News Tool / NewsAPI Tool → Tool Result → ToolMessage → GPT-4o → News Summary
+```
+
+**Example Questions:**
+```
+Latest Apple news.
+Latest Tesla news.
+Latest Federal Reserve news.
+Latest inflation news.
+Summarize today's AI market news.
+```
+
+---
+
+### 5. LLM Router Agent
 
 Selects the most appropriate specialized agent for every user request. Analyzes both the current user query and the complete conversation history to make a context-aware routing decision — enabling correct handling of follow-up questions without keyword matching.
 
@@ -200,6 +227,7 @@ Selects the most appropriate specialized agent for every user request. Analyzes 
 - `finance_qa` — Finance concepts, definitions, educational questions
 - `market_agent` — Live stock prices, market data, trading decisions
 - `portfolio_agent` — Portfolio analysis, diversification, risk assessment
+- `news_agent` — Financial news retrieval, company news, market news, macro topics
 
 **Multi-turn Example:**
 ```
@@ -208,6 +236,9 @@ User: Should I buy it?                       → Market Agent ✅ (understands "
 
 User: Analyze my portfolio.                  → Portfolio Agent
 User: How can I reduce the risk?             → Portfolio Agent ✅ (understands prior context)
+
+User: Latest news on Tesla.                  → News Agent
+User: How has it affected the stock?         → News Agent ✅ (understands prior context)
 ```
 
 ---
@@ -223,7 +254,8 @@ User Query → Update Conversation History → FinanceAgentState → LLM Router 
     │
     ├──→ Finance QA Agent → RAG Pipeline
     ├──→ Market Agent → Yahoo Finance Tool
-    └──→ Portfolio Agent → Portfolio Tool
+    ├──→ Portfolio Agent → Portfolio Tool
+    └──→ News Agent → Yahoo Finance News Tool / NewsAPI Tool
     │
     └──→ Generate Response → Return to Streamlit
 ```
@@ -250,7 +282,7 @@ Financial Documents (Investopedia)
 
 ## Tool Calling Workflow
 
-The Market Agent and Portfolio Agent use **LangChain Tool Calling** to interact with external tools. The LLM determines whether a tool is required, generates a structured tool call, executes it, and uses the result to produce a natural language response.
+The Market Agent, Portfolio Agent, and News Agent use **LangChain Tool Calling** to interact with external tools. The LLM determines whether a tool is required, generates a structured tool call, executes it, and uses the result to produce a natural language response.
 
 ```text
 User Query → LLM → Tool Call? ──Yes──→ Execute Tool → ToolMessage → LLM → Final Response
@@ -273,11 +305,14 @@ User Query → LLM → Tool Call? ──Yes──→ Execute Tool → ToolMessag
 ### Portfolio Agent
 - ✅ Portfolio analysis tool · Value & allocation calculation · Diversification & concentration risk analysis · Investment suggestions
 
+### News Agent
+- ✅ Multi-tool agent · Yahoo Finance News · NewsAPI integration · Automatic tool selection · Financial news summarization · Company-specific news · Market news · Graceful error handling
+
 ### LLM Router
 - ✅ Conversation-aware routing · Multi-turn query understanding · Dynamic agent selection via GPT-4.1-mini
 
 ### LangGraph Workflow
-- ✅ FinanceAgentState · Router, QA, Market, and Portfolio nodes · Conditional routing · Multi-agent orchestration
+- ✅ FinanceAgentState · Router, QA, Market, Portfolio, and News nodes · Conditional routing · Multi-agent orchestration
 
 ### Streamlit Application
 - ✅ Conversational chat interface · Session-based history · Cached vector store & workflow
@@ -288,6 +323,8 @@ User Query → LLM → Tool Call? ──Yes──→ Execute Tool → ToolMessag
 ---
 
 ## Example Queries
+
+**News:** `Latest Apple news.` · `Latest Tesla news.` · `Latest Federal Reserve news.` · `Latest inflation news.` · `Summarize today's AI market news.`
 
 **Finance QA:** `What is SIP?` · `Explain Mutual Funds.` · `What is an ETF?` · `Difference between ETF and Mutual Fund.`
 
@@ -316,6 +353,7 @@ NVIDIA — 8 shares  @ $170
 | OpenAI Embeddings (`text-embedding-3-large`) | Vector Embeddings |
 | FAISS | Vector Database |
 | Yahoo Finance (yfinance) | Live Market Data |
+| NewsAPI | Financial News Retrieval |
 | Streamlit | Web Application |
 | BeautifulSoup | Document Parsing |
 | Pytest | Unit Testing |
@@ -329,8 +367,8 @@ NVIDIA — 8 shares  @ $170
 - [ ] Persistent User Memory · Cross-session Memory · Source Citations
 
 ### Agents
-- [x] Finance QA · Market · Portfolio · LLM Router
-- [ ] Goal Planner · Financial News · Tax · Compliance
+- [x] Finance QA · Market · Portfolio · LLM Router · Financial News
+- [ ] Goal Planner · Tax · Compliance
 
 ### Market Intelligence
 - [x] Live Stock Prices
@@ -370,7 +408,11 @@ streamlit run src/web_app/app.py
 ## Future Enhancements
 
 - Personalized & Goal-Based Financial Planning
-- News Summarization Agent
+- News Sentiment Analysis
+- AI-powered Market Impact Analysis
+- Personalized Financial News Feed
+- Company Watchlist Alerts
+- News-to-Portfolio Impact Analysis
 - Voice Assistant
 - MCP Integration
 - Broker Account Integration (e.g., Zerodha)
