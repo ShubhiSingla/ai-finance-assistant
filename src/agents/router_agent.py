@@ -41,6 +41,17 @@ Use for:
 - holdings
 - rebalancing
 - investment suggestions
+     
+4. news_agent
+Use for:
+- latest news
+- company news
+- stock news
+- market news
+- financial news
+- news summaries
+- why a stock moved
+- recent market events    
 
 You will receive the complete conversation history.
 
@@ -53,6 +64,8 @@ finance_qa
 market_agent
 
 portfolio_agent
+     
+news_agent     
 
 Do not explain your decision.
 Do not answer the user's question.   
