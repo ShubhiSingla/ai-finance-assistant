@@ -51,7 +51,19 @@ Use for:
 - financial news
 - news summaries
 - why a stock moved
-- recent market events    
+- recent market events
+
+5. goal_planner_agent
+Use for:
+- financial goals
+- SIP calculation
+- monthly investment
+- retirement planning
+- wealth creation
+- target corpus
+- buying a house
+- child education planning
+- financial planning      
 
 You will receive the complete conversation history.
 
@@ -65,7 +77,9 @@ market_agent
 
 portfolio_agent
      
-news_agent     
+news_agent
+
+goal_planner_agent         
 
 Do not explain your decision.
 Do not answer the user's question.   

@@ -1,14 +1,53 @@
-# Goal Planner Agent - helps users set and track financial goals
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import MessagesPlaceholder
 
+from src.tools.goal_planner_tools import calculate_goal_plan
 
-class GoalPlannerAgent:
-    """Creates personalized financial goal plans and tracks progress."""
+llm = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0
+)
 
-    def __init__(self, llm, calculator):
-        # TODO: initialize LLM and calculator tool
-        self.llm = llm
-        self.calculator = calculator
+goal_planner_prompt = ChatPromptTemplate.from_messages([
 
-    def run(self, goals: dict) -> str:
-        # TODO: generate a savings/investment plan based on user goals
-        raise NotImplementedError
+    ("system", """
+You are an AI Financial Goal Planning Assistant.
+
+Your job is to help users achieve their financial goals.
+
+When a user asks about:
+- monthly SIP
+- investment goals
+- financial planning
+- retirement planning
+- wealth creation
+- target corpus
+- buying a house
+- child's education
+- goal-based investing
+
+use the calculate_goal_plan tool.
+
+If the user does not specify an expected annual return,
+assume the default value provided by the tool.
+
+After receiving the tool result:
+
+- Explain the result in simple English.
+- Mention the required monthly SIP.
+- Mention the investment duration.
+- Mention the expected annual return.
+- Mention the target corpus.
+- Keep the explanation concise and easy to understand.
+"""),
+
+    MessagesPlaceholder(variable_name="messages")
+
+])
+
+goal_planner_agent = goal_planner_prompt | llm.bind_tools(
+    [
+        calculate_goal_plan
+    ]
+)

@@ -7,6 +7,7 @@ from src.workflow.nodes import (
     market_agent_node,
     portfolio_agent_node,
     news_agent_node,
+    goal_planner_agent_node,
     router_node
     )
 
@@ -41,6 +42,11 @@ def build_graph():
     news_agent_node
     )
 
+    graph_builder.add_node(
+        "goal_planner_agent",
+        goal_planner_agent_node
+    )
+
     graph_builder.add_edge(
     START,
     "router"
@@ -53,7 +59,8 @@ def build_graph():
             "finance_qa": "finance_qa",
             "market_agent": "market_agent",
             "portfolio_agent": "portfolio_agent",
-            "news_agent": "news_agent"
+            "news_agent": "news_agent",
+            "goal_planner_agent": "goal_planner_agent"
             
         }
     )
@@ -75,6 +82,11 @@ def build_graph():
 
     graph_builder.add_edge(
         "news_agent",
+        END
+    )
+
+    graph_builder.add_edge(
+        "goal_planner_agent",
         END
     )
 

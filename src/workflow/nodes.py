@@ -8,6 +8,8 @@ from src.agents.router_agent import router_agent
 from src.agents.news_agent import news_agent
 from src.tools.news_tools import fetch_news
 from src.tools.yahoo_news import get_company_news
+from src.agents.goal_planner_agent import goal_planner_agent
+from src.tools.goal_planner_tools import calculate_goal_plan
 
 
 def finance_qa_node(state):
@@ -173,6 +175,50 @@ def news_agent_node(state):
     )
 
     final_response = news_agent.invoke(
+        {
+            "messages": messages + [
+                response,
+                tool_message
+            ]
+        }
+    )
+
+    return {
+        "response": final_response.content
+    }
+
+def goal_planner_agent_node(state):
+
+    messages = state["chat_history"]
+
+    response = goal_planner_agent.invoke(
+        {
+            "messages": messages
+        }
+    )
+
+    if not response.tool_calls:
+        return {
+            "response": response.content
+        }
+
+    tool_call = response.tool_calls[0]
+
+    tool_result = calculate_goal_plan.invoke(
+        tool_call["args"]
+    )
+
+    if tool_result["status"] == "error":
+        return {
+            "response": tool_result["message"]
+        }
+
+    tool_message = ToolMessage(
+        content=str(tool_result),
+        tool_call_id=tool_call["id"]
+    )
+
+    final_response = goal_planner_agent.invoke(
         {
             "messages": messages + [
                 response,
