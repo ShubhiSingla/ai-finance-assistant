@@ -17,7 +17,6 @@ The assistant helps users learn financial concepts, retrieve live stock prices, 
 - 💬 Conversational Chat Interface built with Streamlit
 - 💾 Session-based Conversation History
 - 📰 Financial News Retrieval and Summarization
-- 🎯 Goal-Based Financial Planning and SIP Calculator
 - ⚠️ Graceful Error Handling for External APIs
 
 ---
@@ -42,20 +41,19 @@ The assistant helps users learn financial concepts, retrieve live stock prices, 
                        LLM Router Agent
       (Understands the user's intent using conversation history)
                                 │
-        ┌──────────────┬─────────┴──────────┬──────────────┬──────────────┐
-        ▼              ▼                     ▼              ▼              ▼
- Finance QA       Market Agent        Portfolio Agent  News Agent   Goal Planner
-   Agent               │                    │               │            Agent
-        │              ▼                    ▼        ┌──────┴──────┐      │
-        ▼         Yahoo Finance    Portfolio Analysis ▼             ▼      ▼
-   RAG Pipeline      Tool              Tool       YF News       NewsAPI  Goal
-        │               │                  │       Tool          Tool  Planning
-        ▼               ▼                  ▼          │             │    Tool
- FAISS Retriever  Live Stock Prices  Portfolio         └──────┬──────┘      │
-        │               │            Analytics                │             │
-        └───────────────┼────────────────────────────────────┼─────────────┘
-                        └────────────────────────────────────┘
-                                        ▼
+        ┌───────────────────────┼──────────────────────┬────────────────────────┐
+        ▼                       ▼                      ▼                        ▼
+ Finance QA Agent        Market Agent         Portfolio Agent             News Agent
+        │                       │                      │                        │
+        ▼                       ▼                      ▼               ┌────────┴────────┐
+   RAG Pipeline         Yahoo Finance Tool  Portfolio Analysis Tool    ▼                 ▼
+        │                       │                      │         Yahoo Finance        NewsAPI
+        ▼                       ▼                      ▼           News Tool           Tool
+ FAISS Retriever      Live Stock Prices    Portfolio Analytics          │                 │
+        │                       │                      │               └────────┬────────┘
+        └───────────────────────┼──────────────────────┘                        │
+                                └────────────────────────────────────────────────┘
+                                ▼
                      OpenAI Language Models
                                 │
                                 ▼
@@ -79,7 +77,6 @@ ai_finance_assistant/
 │   ├── market_agent.py
 │   ├── portfolio_agent.py
 │   ├── news_agent.py
-│   ├── goal_planner_agent.py
 │   └── router_agent.py
 │
 ├── rag/
@@ -99,13 +96,10 @@ ai_finance_assistant/
 │   ├── market_data.py
 │   ├── portfolio_tools.py
 │   ├── news_tools.py
-│   ├── yahoo_news.py
-│   └── goal_planner_tools.py
+│   └── yahoo_news.py
 │
 ├── web_app/
-│   ├── app.py
-│   └── pages/
-│       └── goal_planner.py
+│   └── app.py
 │
 ├── data/
 │
@@ -117,11 +111,11 @@ ai_finance_assistant/
 
 | Folder | Description |
 |----------|-------------|
-| `agents/` | Contains all AI agents: Finance QA, Market, Portfolio, News, Goal Planner, and LLM Router. |
+| `agents/` | Contains all AI agents: Finance QA, Market, Portfolio, and LLM Router. |
 | `rag/` | Implements the complete RAG pipeline including document ingestion, chunking, embeddings, retrieval, and prompt generation. |
 | `workflow/` | Defines the LangGraph workflow including state management, nodes, routing, and graph orchestration. |
-| `tools/` | Contains LangChain tools for live stock price retrieval, portfolio analysis, financial news retrieval, and goal planning. |
-| `web_app/` | Streamlit-based conversational chat interface and dedicated Goal Planner dashboard. |
+| `tools/` | Contains LangChain tools for live stock price retrieval, portfolio analysis, and financial news retrieval. |
+| `web_app/` | Streamlit-based conversational web application. |
 | `data/` | Stores documents and vector database files used by the RAG pipeline. |
 | `tests/` | Unit tests for tools, agents, router, and LangGraph workflow. |
 
@@ -223,36 +217,7 @@ Summarize today's AI market news.
 
 ---
 
-### 5. Goal Planner Agent
-
-Helps users calculate the monthly SIP required to achieve a financial goal. Given a target corpus, investment duration, and expected annual return, it computes the required monthly investment and generates a personalized financial plan using LangChain Tool Calling.
-
-**Technologies:** LangChain Tool Calling · OpenAI GPT-4o · Custom Goal Planning Tool
-
-**Workflow:**
-```text
-User Query → GPT-4o → Tool Call → Goal Planning Tool → Tool Result → ToolMessage → GPT-4o → Personalized Financial Plan
-```
-
-**Example Questions:**
-```
-I want ₹1 crore in 15 years.
-How much SIP do I need for ₹50 lakh?
-I want to retire with ₹5 crore.
-How much should I invest every month?
-I want to buy a house in 10 years.
-```
-
-**Capabilities:**
-- Monthly SIP calculation based on target corpus
-- Goal-based financial planning
-- Configurable annual return rate
-- Personalized investment recommendations
-- Graceful error handling
-
----
-
-### 6. LLM Router Agent
+### 5. LLM Router Agent
 
 Selects the most appropriate specialized agent for every user request. Analyzes both the current user query and the complete conversation history to make a context-aware routing decision — enabling correct handling of follow-up questions without keyword matching.
 
@@ -263,7 +228,6 @@ Selects the most appropriate specialized agent for every user request. Analyzes 
 - `market_agent` — Live stock prices, market data, trading decisions
 - `portfolio_agent` — Portfolio analysis, diversification, risk assessment
 - `news_agent` — Financial news retrieval, company news, market news, macro topics
-- `goal_planner_agent` — SIP calculation, financial goals, retirement planning, wealth creation, house planning
 
 **Multi-turn Example:**
 ```
@@ -275,9 +239,6 @@ User: How can I reduce the risk?             → Portfolio Agent ✅ (understand
 
 User: Latest news on Tesla.                  → News Agent
 User: How has it affected the stock?         → News Agent ✅ (understands prior context)
-
-User: I want ₹1 crore in 15 years.          → Goal Planner Agent
-User: What if I increase the duration?       → Goal Planner Agent ✅ (understands prior context)
 ```
 
 ---
@@ -291,11 +252,10 @@ The workflow is coordinated using **FinanceAgentState**, which stores the curren
 ```text
 User Query → Update Conversation History → FinanceAgentState → LLM Router Agent
     │
-    ├──→ Finance QA Agent     → RAG Pipeline
-    ├──→ Market Agent         → Yahoo Finance Tool
-    ├──→ Portfolio Agent      → Portfolio Tool
-    ├──→ News Agent           → Yahoo Finance News Tool / NewsAPI Tool
-    └──→ Goal Planner Agent   → Goal Planning Tool
+    ├──→ Finance QA Agent → RAG Pipeline
+    ├──→ Market Agent → Yahoo Finance Tool
+    ├──→ Portfolio Agent → Portfolio Tool
+    └──→ News Agent → Yahoo Finance News Tool / NewsAPI Tool
     │
     └──→ Generate Response → Return to Streamlit
 ```
@@ -322,40 +282,12 @@ Financial Documents (Investopedia)
 
 ## Tool Calling Workflow
 
-The Market Agent, Portfolio Agent, News Agent, and Goal Planner Agent use **LangChain Tool Calling** to interact with external tools. The LLM determines whether a tool is required, generates a structured tool call, executes it, and uses the result to produce a natural language response.
+The Market Agent, Portfolio Agent, and News Agent use **LangChain Tool Calling** to interact with external tools. The LLM determines whether a tool is required, generates a structured tool call, executes it, and uses the result to produce a natural language response.
 
 ```text
 User Query → LLM → Tool Call? ──Yes──→ Execute Tool → ToolMessage → LLM → Final Response
                          └──No──→ Generate Response directly
 ```
-
----
-
-## Goal Planner Dashboard
-
-The Goal Planner is accessible in two ways — through the main conversational chat interface, or as a dedicated standalone dashboard.
-
-### Conversational Mode
-```text
-User → Chat Interface → LLM Router → Goal Planner Agent → Goal Planning Tool → Personalized Plan
-```
-
-### Dashboard Mode
-```text
-User → Goal Planner Page → Goal Planning Tool → Financial Dashboard
-```
-
-The dedicated dashboard provides a structured, form-based experience with the following inputs and outputs:
-
-- **Goal Type** — Retirement, House Purchase, Education, Wealth Creation, or Custom
-- **Target Corpus** — Desired financial goal amount
-- **Investment Duration** — Number of years to achieve the goal
-- **Expected Annual Return** — Configurable return rate
-- **Current Monthly SIP** — Optional current investment for gap analysis
-- **Required Monthly SIP** — Calculated output
-- **Current SIP Analysis** — Whether the current SIP is sufficient
-- **AI Recommendation** — Personalized guidance generated by GPT-4o
-- **Professional Streamlit Dashboard** — Clean metrics and visual layout
 
 ---
 
@@ -376,17 +308,14 @@ The dedicated dashboard provides a structured, form-based experience with the fo
 ### News Agent
 - ✅ Multi-tool agent · Yahoo Finance News · NewsAPI integration · Automatic tool selection · Financial news summarization · Company-specific news · Market news · Graceful error handling
 
-### Goal Planner Agent
-- ✅ Monthly SIP calculator · Goal-based financial planning · Personalized recommendations · Investment planning tool · Graceful error handling
-
 ### LLM Router
 - ✅ Conversation-aware routing · Multi-turn query understanding · Dynamic agent selection via GPT-4.1-mini
 
 ### LangGraph Workflow
-- ✅ FinanceAgentState · Router, QA, Market, Portfolio, News, and Goal Planner nodes · Conditional routing · Multi-agent orchestration
+- ✅ FinanceAgentState · Router, QA, Market, Portfolio, and News nodes · Conditional routing · Multi-agent orchestration
 
 ### Streamlit Application
-- ✅ Conversational chat interface · Session-based history · Cached vector store & workflow · Goal Planner dashboard
+- ✅ Conversational chat interface · Session-based history · Cached vector store & workflow
 
 ### Testing
 - ✅ Workflow · Router · Market tool · Portfolio tool · Portfolio agent tests
@@ -394,8 +323,6 @@ The dedicated dashboard provides a structured, form-based experience with the fo
 ---
 
 ## Example Queries
-
-**Goal Planner:** `I want ₹1 crore in 15 years.` · `Calculate SIP for ₹50 lakh.` · `Help me plan my retirement.` · `I want to buy a house in 10 years.` · `How much should I invest monthly?`
 
 **News:** `Latest Apple news.` · `Latest Tesla news.` · `Latest Federal Reserve news.` · `Latest inflation news.` · `Summarize today's AI market news.`
 
@@ -422,14 +349,12 @@ NVIDIA — 8 shares  @ $170
 | LangGraph | Multi-agent workflow orchestration |
 | LangChain | LLM integration and Tool Calling |
 | OpenAI GPT-4.1-mini | Finance QA Agent & LLM Router |
-| OpenAI GPT-4o | Market Agent, Portfolio Agent, News Agent & Goal Planner Agent |
+| OpenAI GPT-4o | Market Agent & Portfolio Agent |
 | OpenAI Embeddings (`text-embedding-3-large`) | Vector Embeddings |
 | FAISS | Vector Database |
 | Yahoo Finance (yfinance) | Live Market Data |
 | NewsAPI | Financial News Retrieval |
-| Streamlit | Conversational Web Application |
-| Streamlit Forms | Goal Planner Dashboard UI |
-| Streamlit Metrics | Goal Planner Financial Metrics Display |
+| Streamlit | Web Application |
 | BeautifulSoup | Document Parsing |
 | Pytest | Unit Testing |
 
@@ -442,8 +367,8 @@ NVIDIA — 8 shares  @ $170
 - [ ] Persistent User Memory · Cross-session Memory · Source Citations
 
 ### Agents
-- [x] Finance QA · Market · Portfolio · LLM Router · Financial News · Goal Planner
-- [ ] Tax · Compliance
+- [x] Finance QA · Market · Portfolio · LLM Router · Financial News
+- [ ] Goal Planner · Tax · Compliance
 
 ### Market Intelligence
 - [x] Live Stock Prices
@@ -482,12 +407,7 @@ streamlit run src/web_app/app.py
 
 ## Future Enhancements
 
-- Retirement Corpus Simulator
-- Inflation-adjusted Goal Planning
-- Monte Carlo Goal Simulation
-- Goal Progress Tracking
-- Multiple Financial Goals
-- Goal Timeline Comparison
+- Personalized & Goal-Based Financial Planning
 - News Sentiment Analysis
 - AI-powered Market Impact Analysis
 - Personalized Financial News Feed
